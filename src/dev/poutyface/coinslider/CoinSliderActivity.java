@@ -258,8 +258,8 @@ class CoinSlider extends View {
 		for (int i = 0; i < mFiles.length; i++) {
 			Log.d("MYAPP", "FILE: " + mFiles[i].getPath());
 		}
-		bg = makeBitmap(mFiles[50].getPath());
-		fg = makeBitmap(mFiles[55].getPath());
+		bg = makeBitmap(mFiles[0].getPath());
+		fg = makeBitmap(mFiles[1].getPath());
 
 		Log.d("MYAPP", "FG SCREEN WIDTH " + fg.getWidth() + " SCREEN HEIGHT: "
 				+ fg.getHeight());
