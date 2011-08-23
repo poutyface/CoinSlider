@@ -16,7 +16,10 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.view.View;
+import android.view.View.OnTouchListener;
+import android.view.MotionEvent;
 import android.view.Window;
+import android.view.WindowManager;
 import android.content.Context;
 import android.util.Log;
 import android.content.res.Resources;
@@ -28,6 +31,7 @@ public class CoinSliderActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(new CoinSlider(this));
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN); 
 	}
 }
 
@@ -236,16 +240,32 @@ class Slide {
 		}
 		mOrder++;
 	}
+	
+	public void drawWithoutEffect(Canvas canvas){
+		if(mEffect == Effect.NONE){
+			canvas.drawBitmap(mImage, 0, 0, null);
+			return;
+		}
+		
+		for(Field f : mFields){
+			if(f.getOrder() <= mOrder){
+				f.draw(canvas, mImage);
+			}
+		}
+	}
 }
 
-class CoinSlider extends View {
+class CoinSlider extends View implements OnTouchListener{
 	private Handler mHandler = new Handler();
 	private Slide fourground, background;
 	private File[] mFiles;
 	private int mNextImageIndex = 2;
+	private boolean mPlay = true;
 
 	public CoinSlider(Context context) {
 		super(context);
+		
+		setOnTouchListener(this);
 
 		Bitmap bg, fg;
 		// bg = BitmapFactory.decodeResource(resource, R.drawable.ninja);
@@ -283,13 +303,25 @@ class CoinSlider extends View {
 		}, 0, 20);
 
 	}
+	
+	public boolean onTouch(View v, MotionEvent event){
+		int action = event.getAction();
+		switch(action){
+		case MotionEvent.ACTION_UP:
+			mPlay = (mPlay == true) ? false : true;
+		}
+		return true;
+	}
 
 	@Override
 	public void onDraw(Canvas canvas) {
 
 		background.draw(canvas);
-		fourground.draw(canvas);
-
+		if(mPlay)
+			fourground.draw(canvas);
+		else
+			fourground.drawWithoutEffect(canvas);
+		
 		if (fourground.didFinishedDraw()) {
 			background = fourground;
 			Slide.Effect effect = background.getEffect();
@@ -313,7 +345,7 @@ class CoinSlider extends View {
 				fourground.setEffect(Slide.Effect.RAIN);
 				break;
 			case RAIN:
-				fourground.setEffect(Slide.Effect.NONE);
+				fourground.setEffect(Slide.Effect.STRAIGHT);
 				break;
 			}
 		}
