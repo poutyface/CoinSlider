@@ -5,7 +5,6 @@ import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.io.IOException;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -35,9 +34,11 @@ public class CoinSliderActivity extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
+		Log.d("MYAPP", "OnCreate");
+		
 		mMediaPlayer = MediaPlayer.create(this, R.raw.music);
 		mMediaPlayer.setLooping(true);
-
 
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		int index;
@@ -48,16 +49,23 @@ public class CoinSliderActivity extends Activity {
 		else{
 			index = 0;
 		}
-		mMediaPlayer.start();
+		
 		mCoinSlider = new CoinSlider(this, index);
 		setContentView(mCoinSlider);
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
 	}
 	
+	@Override
+	public void onStart(){
+		super.onStart();
+		mMediaPlayer.start();
+	}
+	
 	@Override  
 	protected void onSaveInstanceState(Bundle outState) {  
 	  super.onSaveInstanceState(outState);
+	  Log.d("MYAPP", "onSaveInstanceState");
 	  outState.putInt("mNextImageIndex", mCoinSlider.getNextImageIndex());
 	  outState.putInt("musicPosition", mMediaPlayer.getCurrentPosition());
 	}  
@@ -65,8 +73,9 @@ public class CoinSliderActivity extends Activity {
 	@Override
 	public void onStop(){
 		super.onStop();
+		Log.d("MYAPP", "onStop");
 		if(mMediaPlayer != null)
-			mMediaPlayer.stop();
+			mMediaPlayer.pause();
 	}
 }
 
