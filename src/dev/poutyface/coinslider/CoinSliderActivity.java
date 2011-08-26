@@ -1,9 +1,11 @@
 package dev.poutyface.coinslider;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.io.IOException;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -23,15 +25,48 @@ import android.view.WindowManager;
 import android.content.Context;
 import android.util.Log;
 import android.content.res.Resources;
+import android.media.MediaPlayer;
+
 
 public class CoinSliderActivity extends Activity {
-	/** Called when the activity is first created. */
+	private MediaPlayer mMediaPlayer = null;
+	private CoinSlider mCoinSlider = null;
+	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		mMediaPlayer = MediaPlayer.create(this, R.raw.music);
+		mMediaPlayer.setLooping(true);
+
+
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
-		setContentView(new CoinSlider(this));
-		getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN); 
+		int index;
+		if(savedInstanceState != null){
+			index = savedInstanceState.getInt("mNextImageIndex", 0);
+			mMediaPlayer.seekTo(savedInstanceState.getInt("musicPosition", 0));
+		}
+		else{
+			index = 0;
+		}
+		mMediaPlayer.start();
+		mCoinSlider = new CoinSlider(this, index);
+		setContentView(mCoinSlider);
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+	}
+	
+	@Override  
+	protected void onSaveInstanceState(Bundle outState) {  
+	  super.onSaveInstanceState(outState);
+	  outState.putInt("mNextImageIndex", mCoinSlider.getNextImageIndex());
+	  outState.putInt("musicPosition", mMediaPlayer.getCurrentPosition());
+	}  
+	  
+	@Override
+	public void onStop(){
+		super.onStop();
+		if(mMediaPlayer != null)
+			mMediaPlayer.stop();
 	}
 }
 
@@ -253,44 +288,31 @@ class Slide {
 			}
 		}
 	}
+	
+
 }
 
 class CoinSlider extends View implements OnTouchListener{
 	private Handler mHandler = new Handler();
 	private Slide fourground, background;
-	private File[] mFiles;
-	private int mNextImageIndex = 2;
+	private File[] mImageFiles;
+	private int mNextImageIndex = 0;
 	private boolean mPlay = true;
 
-	public CoinSlider(Context context) {
+	public CoinSlider(Context context, int index) {
 		super(context);
 		
+		setKeepScreenOn(true);
 		setOnTouchListener(this);
-
-		Bitmap bg, fg;
-		// bg = BitmapFactory.decodeResource(resource, R.drawable.ninja);
-		// fg = BitmapFactory.decodeResource(resource, R.drawable.spiderman);
-		String path = Environment.getExternalStorageDirectory()
-				.getAbsolutePath() + "/" + "DCIM/100ANDRO";
-		Log.d("MYAPP", "PATH: " + path);
-		File dir = new File(path);
-		mFiles = dir.listFiles();
-		for (int i = 0; i < mFiles.length; i++) {
-			Log.d("MYAPP", "FILE: " + mFiles[i].getPath());
-		}
-		bg = makeBitmap(mFiles[0].getPath());
-		fg = makeBitmap(mFiles[1].getPath());
-
-		Log.d("MYAPP", "FG SCREEN WIDTH " + fg.getWidth() + " SCREEN HEIGHT: "
-				+ fg.getHeight());
-
-		Log.d("MYAPP", "BG SCREEN WIDTH " + bg.getWidth() + " SCREEN HEIGHT: "
-				+ bg.getHeight());
-
-		fourground = new Slide(this, fg);
-		background = new Slide(this, bg);
-		background.setEffect(Slide.Effect.NONE);
-
+		
+		mNextImageIndex = index;
+		
+		initImageFiles();
+		setBackgroundImage(mImageFiles[mNextImageIndex].getPath());
+		incNextImageIndex();
+		setFourgroundImage(mImageFiles[mNextImageIndex].getPath());
+		incNextImageIndex();
+		
 		Timer timer = new Timer(false);
 		timer.schedule(new TimerTask() {
 			public void run() {
@@ -301,7 +323,13 @@ class CoinSlider extends View implements OnTouchListener{
 				});
 			}
 		}, 0, 20);
-
+	}
+	
+	private void incNextImageIndex(){
+		mNextImageIndex++;
+		if(mNextImageIndex >= mImageFiles.length){
+			mNextImageIndex = 0;
+		}
 	}
 	
 	public boolean onTouch(View v, MotionEvent event){
@@ -311,6 +339,43 @@ class CoinSlider extends View implements OnTouchListener{
 			mPlay = (mPlay == true) ? false : true;
 		}
 		return true;
+	}
+	
+	private void initImageFiles(){
+		String path = Environment.getExternalStorageDirectory()
+				.getAbsolutePath() + "/DCIM/100ANDRO";
+		Log.d("MYAPP", "PATH: " + path);
+		File dir = new File(path);
+		//mImageFiles = dir.listFiles();
+		mImageFiles = dir.listFiles(new FilenameFilter(){
+			public boolean accept(File file, String name){
+				return name.endsWith(".jpg");
+			}
+		});
+	}
+	
+	private void setBackgroundImage(String path){
+		Bitmap bitmap = makeBitmap(path);
+		background = new Slide(this, bitmap);
+		background.setEffect(Slide.Effect.NONE);
+	}
+	
+	private void setFourgroundImage(String path){
+		Bitmap bitmap = makeBitmap(path);
+		fourground = new Slide(this, bitmap);
+	}
+	
+	private void switchImage(){
+		background = fourground;
+		background.setEffect(Slide.Effect.NONE);
+	}
+	
+	public int getNextImageIndex(){
+		return mNextImageIndex;
+	}
+	
+	public void setNextImageIndex(int index){
+		mNextImageIndex = index;
 	}
 
 	@Override
@@ -323,17 +388,13 @@ class CoinSlider extends View implements OnTouchListener{
 			fourground.drawWithoutEffect(canvas);
 		
 		if (fourground.didFinishedDraw()) {
-			background = fourground;
-			Slide.Effect effect = background.getEffect();
-			background.setEffect(Slide.Effect.NONE);
-			Bitmap fg;
-			mNextImageIndex++;
-			if (mNextImageIndex >= mFiles.length)
+			Slide.Effect effect = fourground.getEffect();
+			switchImage();
+
+			setFourgroundImage(mImageFiles[mNextImageIndex++].getPath());
+			if (mNextImageIndex >= mImageFiles.length)
 				mNextImageIndex = 0;
-
-			fg = makeBitmap(mFiles[mNextImageIndex].getPath());
-			fourground = new Slide(this, fg);
-
+			
 			switch (effect) {
 			case NONE:
 				fourground.setEffect(Slide.Effect.STRAIGHT);
