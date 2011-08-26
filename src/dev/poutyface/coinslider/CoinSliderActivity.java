@@ -2,6 +2,7 @@ package dev.poutyface.coinslider;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -24,6 +25,7 @@ import android.view.WindowManager;
 import android.content.Context;
 import android.util.Log;
 import android.content.res.Resources;
+import android.media.ExifInterface;
 import android.media.MediaPlayer;
 
 
@@ -422,16 +424,42 @@ class CoinSlider extends View implements OnTouchListener{
 	}
 
 	private Bitmap makeBitmap(String path) {
+		int orient = 0;
 		Resources resource = getResources();
 		int screenWidth = resource.getDisplayMetrics().widthPixels;
 		int screenHeight = resource.getDisplayMetrics().heightPixels;
+		try{
+			ExifInterface ei = new ExifInterface(path);
+			orient = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, 0);
+			Log.d("MYAPP", "TAG_ORIENTATION: " + orient);
+		}
+		catch(IOException e){
+			e.printStackTrace();
+		}
 
 		Bitmap image = BitmapFactory.decodeFile(path);
+		
+		Matrix matrix = new Matrix();
+		switch(orient){
+		case ExifInterface.ORIENTATION_ROTATE_180:
+			matrix.postRotate(180);
+			break;
+		case ExifInterface.ORIENTATION_ROTATE_270:
+			matrix.postRotate(270);
+			break;
+		case ExifInterface.ORIENTATION_ROTATE_90:
+			matrix.postRotate(90);
+			break;
+		default:
+			matrix.postRotate(0);
+		}
+		image = Bitmap.createBitmap(image, 0, 0, image.getWidth(), image.getHeight(), matrix, true);
+		matrix.reset();
 
 		float scaleWidth = ((float) screenWidth) / image.getWidth();
 		float scaleHeight = ((float) screenHeight) / image.getHeight();
 		float scale = Math.min(scaleWidth, scaleHeight);
-		Matrix matrix = new Matrix();
+		//Matrix matrix = new Matrix();
 		matrix.postScale(scale, scale);
 
 		return Bitmap.createBitmap(image, 0, 0, image.getWidth(),
