@@ -300,6 +300,11 @@ class Slide {
 		}
 	}
 	
+	public void releaseImage(){
+		if(mImage.isRecycled()){
+			mImage.recycle();
+		}
+	}
 
 }
 
@@ -333,7 +338,7 @@ class CoinSlider extends View implements OnTouchListener{
 					}
 				});
 			}
-		}, 0, 20);
+		}, 20, 30);
 	}
 	
 	private void incNextImageIndex(){
@@ -379,6 +384,7 @@ class CoinSlider extends View implements OnTouchListener{
 	private void switchImage(){
 		background = fourground;
 		background.setEffect(Slide.Effect.NONE);
+		fourground.releaseImage();
 	}
 	
 	public int getNextImageIndex(){
@@ -428,16 +434,19 @@ class CoinSlider extends View implements OnTouchListener{
 		Resources resource = getResources();
 		int screenWidth = resource.getDisplayMetrics().widthPixels;
 		int screenHeight = resource.getDisplayMetrics().heightPixels;
+		
 		try{
 			ExifInterface ei = new ExifInterface(path);
 			orient = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, 0);
-			Log.d("MYAPP", "TAG_ORIENTATION: " + orient);
+			//Log.d("MYAPP", "TAG_ORIENTATION: " + orient);
 		}
 		catch(IOException e){
 			e.printStackTrace();
 		}
 
-		Bitmap image = BitmapFactory.decodeFile(path);
+		BitmapFactory.Options opt = new BitmapFactory.Options();
+		opt.inSampleSize = 4;
+		Bitmap image = BitmapFactory.decodeFile(path, opt);
 		
 		Matrix matrix = new Matrix();
 		switch(orient){
@@ -459,7 +468,6 @@ class CoinSlider extends View implements OnTouchListener{
 		float scaleWidth = ((float) screenWidth) / image.getWidth();
 		float scaleHeight = ((float) screenHeight) / image.getHeight();
 		float scale = Math.min(scaleWidth, scaleHeight);
-		//Matrix matrix = new Matrix();
 		matrix.postScale(scale, scale);
 
 		return Bitmap.createBitmap(image, 0, 0, image.getWidth(),
