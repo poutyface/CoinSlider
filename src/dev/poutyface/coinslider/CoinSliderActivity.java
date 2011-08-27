@@ -310,7 +310,7 @@ class Slide {
 
 class CoinSlider extends View implements OnTouchListener{
 	private Handler mHandler = new Handler();
-	private Slide fourground, background;
+	private Slide foreground, background;
 	private File[] mImageFiles;
 	private int mNextImageIndex = 0;
 	private boolean mPlay = true;
@@ -326,7 +326,7 @@ class CoinSlider extends View implements OnTouchListener{
 		initImageFiles();
 		setBackgroundImage(mImageFiles[mNextImageIndex].getPath());
 		incNextImageIndex();
-		setFourgroundImage(mImageFiles[mNextImageIndex].getPath());
+		setForegroundImage(mImageFiles[mNextImageIndex].getPath());
 		incNextImageIndex();
 		
 		Timer timer = new Timer(false);
@@ -338,7 +338,7 @@ class CoinSlider extends View implements OnTouchListener{
 					}
 				});
 			}
-		}, 20, 30);
+		}, 20, 25);
 	}
 	
 	private void incNextImageIndex(){
@@ -376,15 +376,15 @@ class CoinSlider extends View implements OnTouchListener{
 		background.setEffect(Slide.Effect.NONE);
 	}
 	
-	private void setFourgroundImage(String path){
+	private void setForegroundImage(String path){
 		Bitmap bitmap = makeBitmap(path);
-		fourground = new Slide(this, bitmap);
+		foreground = new Slide(this, bitmap);
 	}
 	
 	private void switchImage(){
-		background = fourground;
+		background = foreground;
 		background.setEffect(Slide.Effect.NONE);
-		fourground.releaseImage();
+		foreground.releaseImage();
 	}
 	
 	public int getNextImageIndex(){
@@ -400,30 +400,30 @@ class CoinSlider extends View implements OnTouchListener{
 
 		background.draw(canvas);
 		if(mPlay)
-			fourground.draw(canvas);
+			foreground.draw(canvas);
 		else
-			fourground.drawWithoutEffect(canvas);
+			foreground.drawWithoutEffect(canvas);
 		
-		if (fourground.didFinishedDraw()) {
-			Slide.Effect effect = fourground.getEffect();
+		if (foreground.didFinishedDraw()) {
+			Slide.Effect effect = foreground.getEffect();
 			switchImage();
 
-			setFourgroundImage(mImageFiles[mNextImageIndex++].getPath());
+			setForegroundImage(mImageFiles[mNextImageIndex++].getPath());
 			if (mNextImageIndex >= mImageFiles.length)
 				mNextImageIndex = 0;
 			
 			switch (effect) {
 			case NONE:
-				fourground.setEffect(Slide.Effect.STRAIGHT);
+				foreground.setEffect(Slide.Effect.STRAIGHT);
 				break;
 			case STRAIGHT:
-				fourground.setEffect(Slide.Effect.RANDOM);
+				foreground.setEffect(Slide.Effect.RANDOM);
 				break;
 			case RANDOM:
-				fourground.setEffect(Slide.Effect.RAIN);
+				foreground.setEffect(Slide.Effect.RAIN);
 				break;
 			case RAIN:
-				fourground.setEffect(Slide.Effect.STRAIGHT);
+				foreground.setEffect(Slide.Effect.STRAIGHT);
 				break;
 			}
 		}
